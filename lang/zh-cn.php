@@ -69,6 +69,7 @@ return [
     'chunk not support order'                                   => 'Chunk不支持调用order方法',
     'route pattern error'                                       => '路由变量规则定义错误',
     'route behavior will not support'                           => '路由行为废弃（使用中间件替代）',
+    'closure not support cache(true)'                           => '使用闭包查询不支持cache(true)，请指定缓存Key',
 
     // 上传错误信息
     'unknown upload error'                                      => '未知上传错误！',
@@ -86,6 +87,8 @@ return [
     'filesize not match'                                        => '上传文件大小不符！',
     'directory {:path} creation failed'                         => '目录 {:path} 创建失败！',
 
+    'The middleware must return Response instance'              => '中间件方法必须返回Response对象实例',
+    'The queue was exhausted, with no response returned'        => '中间件队列为空',
     // Validate Error Message
     ':attribute require'                                        => ':attribute不能为空',
     ':attribute must'                                           => ':attribute必须',

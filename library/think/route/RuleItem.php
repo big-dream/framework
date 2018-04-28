@@ -140,6 +140,20 @@ class RuleItem extends Rule
     }
 
     /**
+     * 设置别名
+     * @access public
+     * @param  string     $name
+     * @return $this
+     */
+    public function name($name)
+    {
+        $this->name = $name;
+        $this->setRuleName(true);
+
+        return $this;
+    }
+
+    /**
      * 设置路由标识 用于URL反解生成
      * @access protected
      * @param  bool     $first   是否插入开头
@@ -167,7 +181,7 @@ class RuleItem extends Rule
 
     /**
      * 检测路由
-     * @access private
+     * @access public
      * @param  Request      $request  请求对象
      * @param  string       $url      访问地址
      * @param  array        $match    匹配路由变量
@@ -175,7 +189,7 @@ class RuleItem extends Rule
      * @param  bool         $completeMatch   路由是否完全匹配
      * @return Dispatch|false
      */
-    private function checkRule($request, $url, $match = null, $depr = '/', $completeMatch = false)
+    public function checkRule($request, $url, $match = null, $depr = '/', $completeMatch = false)
     {
         if ($dispatch = $this->checkCrossDomain($request)) {
             // 允许跨域
@@ -223,20 +237,7 @@ class RuleItem extends Rule
     }
 
     /**
-     * 检测已经匹配的路由
-     * @access public
-     * @param  Request      $request  请求对象
-     * @param  string       $url      访问地址
-     * @param  array        $match    匹配路由变量
-     * @return Dispatch|false
-     */
-    public function checkMatchRule($request, $url, $match = [])
-    {
-        return $this->checkRule($request, $url, $match);
-    }
-
-    /**
-     * 检测已经匹配的路由
+     * URL后缀及Slash检查
      * @access protected
      * @param  Request      $request  请求对象
      * @param  string       $url      访问地址
@@ -308,7 +309,7 @@ class RuleItem extends Rule
             $regex = $this->buildRuleRegex($rule, $matches[0], $pattern, $option, $completeMatch);
 
             try {
-                if (!preg_match('/^' . $regex . ($completeMatch ? '$' : '') . '/', $url, $match)) {
+                if (!preg_match('/^' . $regex . ($completeMatch ? '$' : '') . '/u', $url, $match)) {
                     return false;
                 }
             } catch (\Exception $e) {

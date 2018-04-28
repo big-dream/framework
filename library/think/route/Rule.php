@@ -98,6 +98,16 @@ abstract class Rule
     }
 
     /**
+     * 获取Parent对象
+     * @access public
+     * @return $this|null
+     */
+    public function getParent()
+    {
+        return $this->parent;
+    }
+
+    /**
      * 获取变量规则定义
      * @access public
      * @param  string  $name 变量名
@@ -615,7 +625,6 @@ abstract class Rule
 
         // 检测路由after行为
         if (!empty($option['after'])) {
-            trigger_error('route behavior will not support');
             $dispatch = $this->checkAfter($option['after']);
 
             if (false !== $dispatch) {
@@ -636,9 +645,7 @@ abstract class Rule
     {
         // 添加中间件
         if (!empty($option['middleware'])) {
-            foreach ($option['middleware'] as $middleware) {
-                Container::get('middlewareDispatcher')->add($middleware);
-            }
+            Container::get('middleware')->import($option['middleware']);
         }
 
         // 绑定模型数据
@@ -715,7 +722,6 @@ abstract class Rule
      */
     protected function checkBefore($before)
     {
-        trigger_error('route behavior will not support');
         $hook = Container::get('hook');
 
         foreach ((array) $before as $behavior) {
@@ -735,6 +741,8 @@ abstract class Rule
      */
     protected function checkAfter($after)
     {
+        Container::get('log')->notice('路由后置行为建议使用中间件替代！');
+
         $hook = Container::get('hook');
 
         $result = null;
@@ -856,7 +864,7 @@ abstract class Rule
         $request->route($var);
 
         // 路由到模块/控制器/操作
-        return (new ModuleDispatch([$module, $controller, $action]))->convert(false);
+        return new ModuleDispatch([$module, $controller, $action], [], false);
     }
 
     /**
@@ -892,7 +900,7 @@ abstract class Rule
         }
 
         // 域名检查
-        if ((isset($option['domain']) && !in_array($option['domain'], [$_SERVER['HTTP_HOST'], $request->subDomain()]))) {
+        if ((isset($option['domain']) && !in_array($option['domain'], [$request->host(true), $request->subDomain()]))) {
             return false;
         }
 
@@ -977,12 +985,21 @@ abstract class Rule
         }
 
         // 是否区分 / 地址访问
-        if (!empty($option['remove_slash']) && '/' != $rule) {
-            $rule = rtrim($rule, '/');
+        if ('/' != $rule) {
+            if (!empty($option['remove_slash'])) {
+                $rule = rtrim($rule, '/');
+            } elseif (substr($rule, -1) == '/') {
+                $rule     = rtrim($rule, '/');
+                $hasSlash = true;
+            }
         }
 
         $regex = str_replace($match, $replace, $rule);
         $regex = str_replace([')?/', ')/', ')?-', ')-', '\\\\/'], [')\/', ')\/', ')\-', ')\-', '\/'], $regex);
+
+        if (isset($hasSlash)) {
+            $regex .= '\/';
+        }
 
         return $regex . ($completeMatch ? '$' : '');
     }
@@ -1019,7 +1036,14 @@ abstract class Rule
             $name = substr($name, 1, -1);
         }
 
-        $nameRule = isset($pattern[$name]) ? $pattern[$name] : '\w+';
+        if (isset($pattern[$name])) {
+            $nameRule = $pattern[$name];
+            if (0 === strpos($nameRule, '/') && '/' == substr($nameRule, -1)) {
+                $nameRule = substr($nameRule, 1, -1);
+            }
+        } else {
+            $nameRule = '\w+';
+        }
 
         return '(' . $prefix . '(?<' . $name . $suffix . '>' . $nameRule . '))' . $optional;
     }

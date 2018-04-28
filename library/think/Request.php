@@ -252,6 +252,12 @@ class Request
     protected $isCheckCache;
 
     /**
+     * 请求安全Key
+     * @var string
+     */
+    protected $secureKey;
+
+    /**
      * 架构函数
      * @access public
      * @param  array  $options 参数
@@ -317,10 +323,12 @@ class Request
         $server['PATH_INFO']      = '';
         $server['REQUEST_METHOD'] = strtoupper($method);
         $info                     = parse_url($uri);
+
         if (isset($info['host'])) {
             $server['SERVER_NAME'] = $info['host'];
             $server['HTTP_HOST']   = $info['host'];
         }
+
         if (isset($info['scheme'])) {
             if ('https' === $info['scheme']) {
                 $server['HTTPS']       = 'on';
@@ -330,27 +338,34 @@ class Request
                 $server['SERVER_PORT'] = 80;
             }
         }
+
         if (isset($info['port'])) {
             $server['SERVER_PORT'] = $info['port'];
             $server['HTTP_HOST']   = $server['HTTP_HOST'] . ':' . $info['port'];
         }
+
         if (isset($info['user'])) {
             $server['PHP_AUTH_USER'] = $info['user'];
         }
+
         if (isset($info['pass'])) {
             $server['PHP_AUTH_PW'] = $info['pass'];
         }
+
         if (!isset($info['path'])) {
             $info['path'] = '/';
         }
-        $options                      = [];
+
+        $options     = [];
+        $queryString = '';
+
         $options[strtolower($method)] = $params;
-        $queryString                  = '';
+
         if (isset($info['query'])) {
             parse_str(html_entity_decode($info['query']), $query);
             if (!empty($params)) {
                 $params      = array_replace($query, $params);
-                $queryString = http_build_query($query, '', '&');
+                $queryString = http_build_query($params, '', '&');
             } else {
                 $params      = $query;
                 $queryString = $info['query'];
@@ -358,6 +373,7 @@ class Request
         } elseif (!empty($params)) {
             $queryString = http_build_query($params, '', '&');
         }
+
         if ($queryString) {
             parse_str($queryString, $get);
             $options['get'] = isset($options['get']) ? array_merge($get, $options['get']) : $get;
@@ -388,19 +404,24 @@ class Request
     /**
      * 设置或获取当前包含协议的域名
      * @access public
-     * @param  string $domain 域名
+     * @param  string|bool $domain 域名
      * @return string|$this
      */
     public function domain($domain = null)
     {
-        if (!is_null($domain)) {
-            $this->domain = $domain;
-            return $this;
-        } elseif (!$this->domain) {
-            $this->domain = $this->scheme() . '://' . $this->host();
+        if (is_null($domain)) {
+            if (!$this->domain) {
+                $this->domain = $this->scheme() . '://' . $this->host();
+            }
+            return $this->domain;
         }
 
-        return $this->domain;
+        if (true === $domain) {
+            return $this->scheme() . '://' . $this->host(true);
+        }
+
+        $this->domain = $domain;
+        return $this;
     }
 
     /**
@@ -413,7 +434,7 @@ class Request
         $root = $this->config->get('app.url_domain_root');
 
         if (!$root) {
-            $item  = explode('.', $this->host());
+            $item  = explode('.', $this->host(true));
             $count = count($item);
             $root  = $count > 1 ? $item[$count - 2] . '.' . $item[$count - 1] : $item[0];
         }
@@ -434,9 +455,9 @@ class Request
 
             if ($rootDomain) {
                 // 配置域名根 例如 thinkphp.cn 163.com.cn 如果是国家级域名 com.cn net.cn 之类的域名需要配置
-                $domain = explode('.', rtrim(stristr($this->host(), $rootDomain, true), '.'));
+                $domain = explode('.', rtrim(stristr($this->host(true), $rootDomain, true), '.'));
             } else {
-                $domain = explode('.', $this->host(), -2);
+                $domain = explode('.', $this->host(true), -2);
             }
 
             $this->subDomain = implode('.', $domain);
@@ -1099,37 +1120,12 @@ class Request
         $files = $this->file;
         if (!empty($files)) {
             // 处理上传文件
-            $array = [];
-            foreach ($files as $key => $file) {
-                if (is_array($file['name'])) {
-                    $item  = [];
-                    $keys  = array_keys($file);
-                    $count = count($file['name']);
-                    for ($i = 0; $i < $count; $i++) {
-                        if (empty($file['tmp_name'][$i]) || !is_file($file['tmp_name'][$i])) {
-                            continue;
-                        }
-                        $temp['key'] = $key;
-                        foreach ($keys as $_key) {
-                            $temp[$_key] = $file[$_key][$i];
-                        }
-                        $item[] = (new File($temp['tmp_name']))->setUploadInfo($temp);
-                    }
-                    $array[$key] = $item;
-                } else {
-                    if ($file instanceof File) {
-                        $array[$key] = $file;
-                    } else {
-                        if (empty($file['tmp_name']) || !is_file($file['tmp_name'])) {
-                            continue;
-                        }
-                        $array[$key] = (new File($file['tmp_name']))->setUploadInfo($file);
-                    }
-                }
-            }
+            $array = $this->dealUploadFile($files);
+
             if (strpos($name, '.')) {
                 list($name, $sub) = explode('.', $name);
             }
+
             if ('' === $name) {
                 // 获取全部文件
                 return $array;
@@ -1141,6 +1137,46 @@ class Request
         }
 
         return;
+    }
+
+    protected function dealUploadFile($files)
+    {
+        $array = [];
+        foreach ($files as $key => $file) {
+            if (is_array($file['name'])) {
+                $item  = [];
+                $keys  = array_keys($file);
+                $count = count($file['name']);
+
+                for ($i = 0; $i < $count; $i++) {
+                    if (empty($file['tmp_name'][$i]) || !is_file($file['tmp_name'][$i])) {
+                        continue;
+                    }
+
+                    $temp['key'] = $key;
+
+                    foreach ($keys as $_key) {
+                        $temp[$_key] = $file[$_key][$i];
+                    }
+
+                    $item[] = (new File($temp['tmp_name']))->setUploadInfo($temp);
+                }
+
+                $array[$key] = $item;
+            } else {
+                if ($file instanceof File) {
+                    $array[$key] = $file;
+                } else {
+                    if (empty($file['tmp_name']) || !is_file($file['tmp_name'])) {
+                        continue;
+                    }
+
+                    $array[$key] = (new File($file['tmp_name']))->setUploadInfo($file);
+                }
+            }
+        }
+
+        return $array;
     }
 
     /**
@@ -1232,6 +1268,7 @@ class Request
             } else {
                 $type = 's';
             }
+
             // 按.拆分成多维数组进行判断
             foreach (explode('.', $name) as $val) {
                 if (isset($data[$val])) {
@@ -1241,6 +1278,7 @@ class Request
                     return $default;
                 }
             }
+
             if (is_object($data)) {
                 return $data;
             }
@@ -1534,7 +1572,11 @@ class Request
             return $ip[$type];
         }
 
-        if ($adv) {
+        $httpAgentIp = $this->config->get('http_agent_ip');
+
+        if ($httpAgentIp && isset($_SERVER[$httpAgentIp])) {
+            $ip = $_SERVER[$httpAgentIp];
+        } elseif ($adv) {
             if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
                 $pos = array_search('unknown', $arr);
@@ -1551,9 +1593,18 @@ class Request
             $ip = $_SERVER['REMOTE_ADDR'];
         }
 
+        // IP地址类型
+        $ip_mode = (strpos($ip, ':') === false) ? 'ipv4' : 'ipv6';
+
         // IP地址合法验证
-        $long = sprintf("%u", ip2long($ip));
-        $ip   = $long ? [$ip, $long] : ['0.0.0.0', 0];
+        if (filter_var($ip, FILTER_VALIDATE_IP) !== $ip) {
+            $ip = ('ipv4' === $ip_mode) ? '0.0.0.0' : '::';
+        }
+
+        // 如果是ipv4地址，则直接使用ip2long返回int类型ip；如果是ipv6地址，暂时不支持，直接返回0
+        $long_ip = ('ipv4' === $ip_mode) ? sprintf("%u", ip2long($ip)) : 0;
+
+        $ip = [$ip, $long_ip];
 
         return $ip[$type];
     }
@@ -1601,15 +1652,18 @@ class Request
     /**
      * 当前请求的host
      * @access public
+     * @param bool $strict  true 仅仅获取HOST
      * @return string
      */
-    public function host()
+    public function host($strict = false)
     {
         if (isset($_SERVER['HTTP_X_REAL_HOST'])) {
-            return $_SERVER['HTTP_X_REAL_HOST'];
+            $host = $_SERVER['HTTP_X_REAL_HOST'];
+        } else {
+            $host = $this->server('HTTP_HOST');
         }
 
-        return $this->server('HTTP_HOST');
+        return true === $strict && strpos($host, ':') ? strstr($host, ':', true) : $host;
     }
 
     /**
@@ -1694,6 +1748,20 @@ class Request
     }
 
     /**
+     * 获取当前请求的安全Key
+     * @access public
+     * @return string
+     */
+    public function secureKey()
+    {
+        if (is_null($this->secureKey)) {
+            $this->secureKey = uniqid('', true);
+        }
+
+        return $this->secureKey;
+    }
+
+    /**
      * 设置或者获取当前的模块名
      * @access public
      * @param  string $module 模块名
@@ -1733,12 +1801,13 @@ class Request
      */
     public function action($action = null)
     {
-        if (!is_null($action)) {
+        if (!is_null($action) && !is_bool($action)) {
             $this->action = $action;
             return $this;
         }
 
-        return $this->action ?: '';
+        $name = $this->action ?: '';
+        return true === $action ? $name : strtolower($name);
     }
 
     /**
@@ -1889,6 +1958,28 @@ class Request
     public function getCache()
     {
         return $this->cache;
+    }
+
+    /**
+     * 设置请求数据
+     * @access public
+     * @param  string    $name  参数名
+     * @param  mixed     $value 值
+     */
+    public function __set($name, $value)
+    {
+        return $this->param[$name] = $value;
+    }
+
+    /**
+     * 获取请求数据的值
+     * @access public
+     * @param  string $name 参数名
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->param($name);
     }
 
 }

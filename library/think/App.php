@@ -20,7 +20,7 @@ use think\route\Dispatch;
  */
 class App implements \ArrayAccess
 {
-    const VERSION = '5.1.5';
+    const VERSION = '5.1.12';
 
     /**
      * 当前模块路径
@@ -126,7 +126,7 @@ class App implements \ArrayAccess
 
     public function __construct($appPath = '')
     {
-        $this->appPath   = $appPath ?: realpath(dirname(dirname($_SERVER['SCRIPT_FILENAME'])) . DIRECTORY_SEPARATOR . 'application') . DIRECTORY_SEPARATOR;
+        $this->appPath   = $appPath ? realpath($appPath) . DIRECTORY_SEPARATOR : $this->getAppPath();
         $this->container = Container::getInstance();
     }
 
@@ -164,7 +164,7 @@ class App implements \ArrayAccess
         $this->beginTime   = microtime(true);
         $this->beginMem    = memory_get_usage();
         $this->thinkPath   = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR;
-        $this->rootPath    = dirname(realpath($this->appPath)) . DIRECTORY_SEPARATOR;
+        $this->rootPath    = dirname($this->appPath) . DIRECTORY_SEPARATOR;
         $this->runtimePath = $this->rootPath . 'runtime' . DIRECTORY_SEPARATOR;
         $this->routePath   = $this->rootPath . 'route' . DIRECTORY_SEPARATOR;
         $this->configPath  = $this->rootPath . 'config' . DIRECTORY_SEPARATOR;
@@ -255,7 +255,10 @@ class App implements \ArrayAccess
         } else {
             // 加载行为扩展文件
             if (is_file($path . 'tags.php')) {
-                $this->hook->import(include $path . 'tags.php' ?: []);
+                $tags = include $path . 'tags.php';
+                if (is_array($tags)) {
+                    $this->hook->import($tags);
+                }
             }
 
             // 加载公共文件
@@ -266,15 +269,22 @@ class App implements \ArrayAccess
             if ('' == $module) {
                 // 加载系统助手函数
                 include $this->thinkPath . 'helper.php';
-                // 加载全局中间件
-                if (is_file($path . 'middleware.php')) {
-                    $this->middlewareDispatcher->import(include $path . 'middleware.php' ?: []);
+            }
+
+            // 加载中间件
+            if (is_file($path . 'middleware.php')) {
+                $middleware = include $path . 'middleware.php';
+                if (is_array($middleware)) {
+                    $this->middleware->import($middleware);
                 }
             }
 
             // 注册服务的容器对象实例
             if (is_file($path . 'provider.php')) {
-                $this->container->bind(include $path . 'provider.php' ?: []);
+                $provider = include $path . 'provider.php';
+                if (is_array($provider)) {
+                    $this->container->bind($provider);
+                }
             }
 
             // 自动读取配置文件
@@ -326,8 +336,12 @@ class App implements \ArrayAccess
             // 获取应用调度信息
             $dispatch = $this->dispatch;
             if (empty($dispatch)) {
-                // 进行URL路由检测
-                $this->route->lazy($this->config('app.url_lazy_route'));
+                // 路由检测
+                $this->route
+                    ->lazy($this->config('app.url_lazy_route'))
+                    ->autoSearchController($this->config('app.controller_auto_search'))
+                    ->mergeRuleRegex($this->config('app.route_rule_merge'));
+
                 $dispatch = $this->routeCheck();
             }
 
@@ -357,7 +371,7 @@ class App implements \ArrayAccess
             $data     = $exception->getResponse();
         }
 
-        $this->middlewareDispatcher->add(function (Request $request, $next) use ($dispatch, $data) {
+        $this->middleware->add(function (Request $request, $next) use ($dispatch, $data) {
             if (is_null($data)) {
                 try {
                     // 执行调度
@@ -382,7 +396,7 @@ class App implements \ArrayAccess
             return $response;
         });
 
-        $response = $this->middlewareDispatcher->dispatch($this->request);
+        $response = $this->middleware->dispatch($this->request);
 
         // 监听app_end
         $this->hook->listen('app_end', $response);
@@ -477,6 +491,10 @@ class App implements \ArrayAccess
             if (is_file($filename)) {
                 include $filename;
             }
+        }
+
+        if (is_file($this->runtimePath . 'rule_regex.php')) {
+            $this->route->setRuleRegexs(include $this->runtimePath . 'rule_regex.php');
         }
 
         // 是否强制路由模式
@@ -737,6 +755,10 @@ class App implements \ArrayAccess
      */
     public function getAppPath()
     {
+        if (is_null($this->appPath)) {
+            $this->appPath = Loader::getRootPath() . 'application' . DIRECTORY_SEPARATOR;
+        }
+
         return $this->appPath;
     }
 
@@ -869,7 +891,7 @@ class App implements \ArrayAccess
 
     public function __unset($name)
     {
-        $this->container->__unset($name);
+        $this->container->delete($name);
     }
 
     public function offsetExists($key)

@@ -9,13 +9,13 @@
 // | Author: Slince <taosikai@yeah.net>
 // +----------------------------------------------------------------------
 
-namespace think\http\middleware;
+namespace think;
 
-use think\Container;
-use think\Request;
-use think\Response;
+use InvalidArgumentException;
+use LogicException;
+use think\exception\HttpResponseException;
 
-class Dispatcher implements DispatcherInterface
+class Middleware
 {
     protected $queue = [];
 
@@ -31,19 +31,31 @@ class Dispatcher implements DispatcherInterface
      */
     public function add($middleware)
     {
+        if (is_null($middleware)) {
+            return;
+        }
+
         $middleware = $this->buildMiddleware($middleware);
 
-        $this->queue[] = $middleware;
+        if ($middleware) {
+            $this->queue[] = $middleware;
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function insert($middleware)
+    public function unshift($middleware)
     {
+        if (is_null($middleware)) {
+            return;
+        }
+
         $middleware = $this->buildMiddleware($middleware);
 
-        array_unshift($this->queue, $middleware);
+        if ($middleware) {
+            array_unshift($this->queue, $middleware);
+        }
     }
 
     /**
@@ -69,20 +81,27 @@ class Dispatcher implements DispatcherInterface
         }
 
         if ($middleware instanceof \Closure) {
-            return [$middleware, null];
+            return [$middleware, isset($param) ? $param : null];
         }
 
         if (!is_string($middleware)) {
-            throw new \InvalidArgumentException('The middleware is invalid');
+            throw new InvalidArgumentException('The middleware is invalid');
         }
 
-        $class = false === strpos($middleware, '\\') ? Container::get('app')->getNamespace() . '\\http\\middleware\\' . $middleware : $middleware;
-
-        if (strpos($class, ':')) {
-            list($class, $param) = explode(':', $class, 2);
+        if (false === strpos($middleware, '\\')) {
+            $value      = Container::get('config')->get('middleware.' . $middleware);
+            $middleware = $value ?: Container::get('app')->getNamespace() . '\\http\\middleware\\' . $middleware;
         }
 
-        return [[Container::get($class), 'handle'], isset($param) ? $param : null];
+        if (is_array($middleware)) {
+            return $this->import($middleware);
+        }
+
+        if (strpos($middleware, ':')) {
+            list($middleware, $param) = explode(':', $middleware, 2);
+        }
+
+        return [[Container::get($middleware), 'handle'], isset($param) ? $param : null];
     }
 
     protected function resolve()
@@ -90,19 +109,23 @@ class Dispatcher implements DispatcherInterface
         return function (Request $request) {
             $middleware = array_shift($this->queue);
 
-            if (null !== $middleware) {
-                list($call, $param) = $middleware;
-
-                $response = call_user_func_array($call, [$request, $this->resolve(), $param]);
-
-                if (!$response instanceof Response) {
-                    throw new \LogicException('The middleware must return Response instance');
-                }
-
-                return $response;
-            } else {
-                throw new MissingResponseException('The queue was exhausted, with no response returned');
+            if (null === $middleware) {
+                throw new InvalidArgumentException('The queue was exhausted, with no response returned');
             }
+
+            list($call, $param) = $middleware;
+
+            try {
+                $response = call_user_func_array($call, [$request, $this->resolve(), $param]);
+            } catch (HttpResponseException $exception) {
+                $response = $exception->getResponse();
+            }
+
+            if (!$response instanceof Response) {
+                throw new LogicException('The middleware must return Response instance');
+            }
+
+            return $response;
         };
     }
 
