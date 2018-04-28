@@ -1414,9 +1414,9 @@ class Request
     /**
      * 是否存在某个请求参数
      * @access public
-     * @param  string    $name 变量名
-     * @param  string    $type 变量类型
-     * @param  bool      $checkEmpty 是否检测空值
+     * @param  string|array    $name 变量名
+     * @param  string          $type 变量类型
+     * @param  bool            $checkEmpty 是否检测空值
      * @return mixed
      */
     public function has($name, $type = 'param', $checkEmpty = false)
@@ -1427,16 +1427,26 @@ class Request
             $param = $this->$type;
         }
 
-        // 按.拆分成多维数组进行判断
-        foreach (explode('.', $name) as $val) {
-            if (isset($param[$val])) {
-                $param = $param[$val];
-            } else {
-                return false;
-            }
+        // 将字符串转换为数组
+        if (is_string($name)) {
+            $name = [$name];
         }
 
-        return ($checkEmpty && '' === $param) ? false : true;
+        // 遍历查询参数是否存在
+        foreach ($name as $key) {
+            $data = $param;
+
+            // 按.拆分成多维数组进行判断
+            foreach (explode('.', $key) as $val) {
+                if (isset($data[$val])) {
+                    $data = $data[$val];
+                } else {
+                    return false;
+                }
+            }
+
+            return ($checkEmpty && '' === $data) ? false : true;
+        }
     }
 
     /**
