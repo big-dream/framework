@@ -97,10 +97,10 @@ class Mysql extends Connection
                 $info[$val['field']] = [
                     'name'    => $val['field'],
                     'type'    => $val['type'],
-                    'notnull' => (bool) ('' === $val['null']), // not null is empty, null is yes
+                    'notnull' => 'NO' == $val['null'],
                     'default' => $val['default'],
-                    'primary' => (strtolower($val['key']) == 'pri'),
-                    'autoinc' => (strtolower($val['extra']) == 'auto_increment'),
+                    'primary' => strtolower($val['key']) == 'pri',
+                    'autoinc' => strtolower($val['extra']) == 'auto_increment',
                 ];
             }
         }
@@ -136,7 +136,27 @@ class Mysql extends Connection
      */
     protected function getExplain($sql)
     {
-        $pdo    = $this->linkID->query("EXPLAIN " . $sql);
+        $pdo = $this->linkID->prepare("EXPLAIN " . $this->queryStr);
+
+        foreach ($this->bind as $key => $val) {
+            // 占位符
+            $param = is_int($key) ? $key + 1 : ':' . $key;
+
+            if (is_array($val)) {
+                if (PDO::PARAM_INT == $val[1] && '' === $val[0]) {
+                    $val[0] = 0;
+                } elseif (self::PARAM_FLOAT == $val[1]) {
+                    $val[0] = is_string($val[0]) ? (float) $val[0] : $val[0];
+                    $val[1] = PDO::PARAM_STR;
+                }
+
+                $result = $pdo->bindValue($param, $val[0], $val[1]);
+            } else {
+                $result = $pdo->bindValue($param, $val);
+            }
+        }
+
+        $pdo->execute();
         $result = $pdo->fetch(PDO::FETCH_ASSOC);
         $result = array_change_key_case($result);
 
@@ -154,4 +174,56 @@ class Mysql extends Connection
         return true;
     }
 
+    /**
+     * 启动XA事务
+     * @access public
+     * @param  string $xid XA事务id
+     * @return void
+     */
+    public function startTransXa($xid)
+    {
+        $this->initConnect(true);
+        if (!$this->linkID) {
+            return false;
+        }
+
+        $this->linkID->exec("XA START '$xid'");
+    }
+
+    /**
+     * 预编译XA事务
+     * @access public
+     * @param  string $xid XA事务id
+     * @return void
+     */
+    public function prepareXa($xid)
+    {
+        $this->initConnect(true);
+        $this->linkID->exec("XA END '$xid'");
+        $this->linkID->exec("XA PREPARE '$xid'");
+    }
+
+    /**
+     * 提交XA事务
+     * @access public
+     * @param  string $xid XA事务id
+     * @return void
+     */
+    public function commitXa($xid)
+    {
+        $this->initConnect(true);
+        $this->linkID->exec("XA COMMIT '$xid'");
+    }
+
+    /**
+     * 回滚XA事务
+     * @access public
+     * @param  string $xid XA事务id
+     * @return void
+     */
+    public function rollbackXa($xid)
+    {
+        $this->initConnect(true);
+        $this->linkID->exec("XA ROLLBACK '$xid'");
+    }
 }
