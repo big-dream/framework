@@ -1178,15 +1178,23 @@ class Validate
     public function filter($value, $rule): bool
     {
         if (is_string($rule) && strpos($rule, ',')) {
-            [$rule, $param] = explode(',', $rule);
+            [$rule, $options] = explode(',', $rule);
         } elseif (is_array($rule)) {
-            $param = $rule[1] ?? null;
+            $options = $rule[1] ?? null;
             $rule  = $rule[0];
         } else {
-            $param = null;
+            $options = null;
         }
 
-        return false !== filter_var($value, is_int($rule) ? $rule : filter_id($rule), $param);
+        $rule = is_int($rule) ? $rule : filter_id($rule);
+
+        if (null === $options) {
+            $result = filter_var($value, $rule);
+        } else {
+            $result = filter_var($value, $rule, $options);
+        }
+
+        return false !== $result;
     }
 
     /**
