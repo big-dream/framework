@@ -161,12 +161,12 @@ class RuleName
     /**
      * 根据路由标识获取路由信息（用于URL生成）
      * @access public
-     * @param  string $name   路由标识
-     * @param  string $domain 域名
-     * @param  string $method 请求类型
+     * @param string|null $name   路由标识
+     * @param string|null $domain 域名
+     * @param string      $method 请求类型
      * @return array
      */
-    public function getName(string $name = null, string $domain = null, string $method = '*'): array
+    public function getName(?string $name = null, ?string $domain = null, string $method = '*'): array
     {
         if (is_null($name)) {
             return $this->item;

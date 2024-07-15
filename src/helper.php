@@ -86,13 +86,13 @@ if (!function_exists('bind')) {
 if (!function_exists('cache')) {
     /**
      * 缓存管理
-     * @param string $name    缓存名称
-     * @param mixed  $value   缓存值
-     * @param mixed  $options 缓存参数
-     * @param string $tag     缓存标签
+     * @param string|null $name    缓存名称
+     * @param mixed       $value   缓存值
+     * @param mixed       $options 缓存参数
+     * @param null        $tag     缓存标签
      * @return mixed
      */
-    function cache(string $name = null, $value = '', $options = null, $tag = null)
+    function cache(?string $name = null, $value = '', $options = null, $tag = null)
     {
         if (is_null($name)) {
             return app('cache');
@@ -207,11 +207,11 @@ if (!function_exists('env')) {
     /**
      * 获取环境变量值
      * @access public
-     * @param string $name    环境变量名（支持二级 .号分割）
-     * @param string $default 默认值
+     * @param string|null $name    环境变量名（支持二级 .号分割）
+     * @param null        $default 默认值
      * @return mixed
      */
-    function env(string $name = null, $default = null)
+    function env(?string $name = null, $default = null)
     {
         return Env::get($name, $default);
     }

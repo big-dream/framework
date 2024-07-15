@@ -304,12 +304,12 @@ class Validate
     /**
      * 注册验证（类型）规则
      * @access public
-     * @param string   $type     验证规则类型
-     * @param callable $callback callback方法(或闭包)
-     * @param string   $message  验证失败提示信息
+     * @param string        $type     验证规则类型
+     * @param callable|null $callback callback方法(或闭包)
+     * @param string|null   $message  验证失败提示信息
      * @return $this
      */
-    public function extend(string $type, callable $callback = null, string $message = null)
+    public function extend(string $type, ?callable $callback = null, ?string $message = null)
     {
         $this->type[$type] = $callback;
 

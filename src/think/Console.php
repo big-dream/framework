@@ -592,11 +592,11 @@ class Console
     /**
      * 获取所有的指令
      * @access public
-     * @param string $namespace 命名空间
+     * @param string|null $namespace 命名空间
      * @return Command[]
      * @api
      */
-    public function all(string $namespace = null): array
+    public function all(?string $namespace = null): array
     {
         if (null === $namespace) {
             return $this->commands;

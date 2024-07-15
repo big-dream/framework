@@ -179,7 +179,7 @@ class Route
         }, 'options');
     }
 
-    public function config(string $name = null)
+    public function config(?string $name = null)
     {
         if (is_null($name)) {
             return $this->config;
@@ -244,10 +244,10 @@ class Route
     /**
      * 获取指定标识的路由分组 不指定则获取当前分组
      * @access public
-     * @param string $name 分组标识
+     * @param string|null $name 分组标识
      * @return RuleGroup
      */
-    public function getGroup(string $name = null)
+    public function getGroup(?string $name = null)
     {
         return $name ? $this->ruleName->getGroup($name) : $this->group;
     }
@@ -334,11 +334,11 @@ class Route
     /**
      * 设置路由绑定
      * @access public
-     * @param string $bind   绑定信息
-     * @param string $domain 域名
+     * @param string      $bind   绑定信息
+     * @param string|null $domain 域名
      * @return $this
      */
-    public function bind(string $bind, string $domain = null)
+    public function bind(string $bind, ?string $domain = null)
     {
         $domain = is_null($domain) ? '-' : $domain;
 
@@ -360,10 +360,10 @@ class Route
     /**
      * 读取路由绑定
      * @access public
-     * @param string $domain 域名
+     * @param string|null $domain 域名
      * @return string|null
      */
-    public function getDomainBind(string $domain = null)
+    public function getDomainBind(?string $domain = null)
     {
         if (is_null($domain)) {
             $domain = $this->host;
@@ -395,12 +395,12 @@ class Route
     /**
      * 读取路由标识
      * @access public
-     * @param string $name   路由标识
-     * @param string $domain 域名
-     * @param string $method 请求类型
+     * @param string|null $name   路由标识
+     * @param string|null $domain 域名
+     * @param string      $method 请求类型
      * @return array
      */
-    public function getName(string $name = null, string $domain = null, string $method = '*'): array
+    public function getName(?string $name = null, ?string $domain = null, string $method = '*'): array
     {
         return $this->ruleName->getName($name, $domain, $method);
     }
@@ -702,10 +702,10 @@ class Route
     /**
      * 获取rest方法定义的参数
      * @access public
-     * @param string $name 方法名称
+     * @param string|null $name 方法名称
      * @return array|null
      */
-    public function getRest(string $name = null)
+    public function getRest(?string $name = null)
     {
         if (is_null($name)) {
             return $this->rest;

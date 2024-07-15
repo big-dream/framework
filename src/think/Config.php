@@ -115,11 +115,11 @@ class Config
     /**
      * 获取配置参数 为空则获取所有配置
      * @access public
-     * @param  string $name    配置参数名（支持多级配置 .号分割）
-     * @param  mixed  $default 默认值
+     * @param string|null $name    配置参数名（支持多级配置 .号分割）
+     * @param mixed       $default 默认值
      * @return mixed
      */
-    public function get(string $name = null, $default = null)
+    public function get(?string $name = null, $default = null)
     {
         // 无参数时获取所有
         if (empty($name)) {
@@ -149,11 +149,11 @@ class Config
     /**
      * 设置配置参数 name为数组则为批量设置
      * @access public
-     * @param  array  $config 配置参数
-     * @param  string $name 配置名
+     * @param array       $config 配置参数
+     * @param string|null $name   配置名
      * @return array
      */
-    public function set(array $config, string $name = null): array
+    public function set(array $config, ?string $name = null): array
     {
         if (empty($name)) {
             $this->config = array_merge($this->config, array_change_key_case($config));

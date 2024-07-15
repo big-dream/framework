@@ -28,7 +28,7 @@ class Stack
      * 构造方法
      * @param Style|null $emptyStyle
      */
-    public function __construct(Style $emptyStyle = null)
+    public function __construct(?Style $emptyStyle = null)
     {
         $this->emptyStyle = $emptyStyle ?: new Style();
         $this->reset();

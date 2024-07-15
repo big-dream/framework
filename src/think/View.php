@@ -39,10 +39,10 @@ class View extends Manager
     /**
      * 获取模板引擎
      * @access public
-     * @param string $type 模板引擎类型
+     * @param string|null $type 模板引擎类型
      * @return TemplateHandlerInterface
      */
-    public function engine(string $type = null)
+    public function engine(?string $type = null)
     {
         return $this->driver($type);
     }
@@ -68,10 +68,10 @@ class View extends Manager
     /**
      * 视图过滤
      * @access public
-     * @param Callable $filter 过滤方法或闭包
+     * @param callable|null $filter 过滤方法或闭包
      * @return $this
      */
-    public function filter(callable $filter = null)
+    public function filter(?callable $filter = null)
     {
         $this->filter = $filter;
         return $this;

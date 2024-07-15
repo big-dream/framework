@@ -224,7 +224,7 @@ class Lang
      * @param string      $range 语言作用域
      * @return mixed
      */
-    public function get(string $name = null, array $vars = [], string $range = '')
+    public function get(?string $name = null, array $vars = [], string $range = '')
     {
         $range = $range ?: $this->range;
 
