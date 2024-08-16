@@ -26,5 +26,17 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist
 
+      - name: Get list of changed PHP files
+        id: changed_files
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff --name-only --diff-filter=d origin/${{ github.base_ref }}...${{ github.head_ref }} | grep '\.php$' > changed_files.txt
+          if [ -s changed_files.txt ]; then
+            echo "files=$(cat changed_files.txt | paste -sd " ")" >> $GITHUB_ENV
+          else
+            echo "files=" >> $GITHUB_ENV
+          fi
+
       - name: Run PHP CS Fixer
-        run: php-cs-fixer fix src --dry-run --diff --rules=@PER-CS2.0 --format=checkstyle | cs2pr
+        if: env.files != ''
+        run: php-cs-fixer fix $files --dry-run --diff --rules=@PER-CS2.0 --format=checkstyle | cs2pr
