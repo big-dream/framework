@@ -37,11 +37,7 @@ use think\response\View;
 use think\response\Xml;
 use think\route\Url as UrlBuild;
 use think\Validate;
-
-$a=1+2;
-$b='c'.'0'.123;
 function($a,$v){echo 123;}
-
 if (!function_exists('abort')) {
     /**
      * 抛出HTTP异常
