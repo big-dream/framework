@@ -1,0 +1,30 @@
+name: PHP CS Fixer
+
+on:
+  push:
+    branches:
+      - "8.0"
+      - "8.0-CONTRIBUTING"
+  pull_request:
+
+jobs:
+  php-cs-fixer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          tools: composer,cs2pr,php-cs-fixer
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Run PHP CS Fixer
+        run: php-cs-fixer fix src --dry-run --diff --format=checkstyle | cs2pr
