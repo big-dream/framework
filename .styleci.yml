@@ -1,5 +1,0 @@
-risky: false # 禁用风险类配置
-version: 8.0 # PHP 版本
-preset: psr12 # 预设配置
-tab-width: 4 # tab 宽度
-use-tabs: false # 不使用 tab
