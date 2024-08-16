@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "8.0"
+      - "8.0-CONTRIBUTING"
   pull_request:
   schedule:
     - cron: "0 0 * * *"
@@ -29,7 +30,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          tools: composer:v2
+          tools: composer:v2,cs2pr,php-cs-fixer
           coverage: xdebug
 
       - name: Install dependencies
@@ -46,3 +47,6 @@ jobs:
         uses: sudo-bot/action-scrutinizer@latest
         with:
           cli-args: "--format=php-clover build/logs/clover.xml --revision=${{ github.event.pull_request.head.sha || github.sha }}"
+
+      - name: Run PHP CS Fixer
+        run: php-cs-fixer fix src --dry-run --diff --format=checkstyle | cs2pr
