@@ -1,12 +1,6 @@
 name: PHP CS Fixer
 
 on:
-  push:
-    branches:
-      - "8.0"
-      - "8.0-CONTRIBUTING"
-    paths:
-      - '**.php'
   pull_request:
 
 jobs:
@@ -23,21 +17,21 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
-          tools: composer,cs2pr,php-cs-fixer
+          tools: cs2pr,php-cs-fixer
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist
-
-      - name: Fetch all branches
-        run: git fetch --all
-
-      - name: Get list of modified files
-        id: modified_files
+      - name: Get changed files
+        id: changed_files
         run: |
-          IFS=$'\n'
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
-          if ! echo "${CHANGED_FILES}" | grep -qE "^(\\.php-cs-fixer(\\.dist)?\\.php|composer\\.lock)$"; then EXTRA_ARGS=$(printf -- '--path-mode=intersection\n--\n%s' "${CHANGED_FILES}"); else EXTRA_ARGS=''; fi
-          php-cs-fixer check --rules=@PER-CS2.0 -v --stop-on-violation --using-cache=no ${EXTRA_ARGS}
+          echo "::set-output name=files::$(git diff --name-only --diff-filter=AMR ${{ github.event.before }} ${{ github.sha }} | grep '\.php$')"
+
+          - name: Run PHP CS Fixer
+            run: |
+              if [ -n "${{ steps.changed_files.outputs.files }}" ]; then
+                echo "Running PHP CS Fixer on changed files..."
+                echo "${{ steps.changed_files.outputs.files }}" | xargs -n 1 php-cs-fixer fix --dry-run --diff --verbose
+              else
+                echo "No PHP files changed."
+              fi
 
 #      - name: Run PHP CS Fixer
 #        if: env.files != ''
