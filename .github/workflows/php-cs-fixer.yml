@@ -34,10 +34,10 @@ jobs:
       - name: Get list of modified files
         id: modified_files
         run: |
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
-          # 获取所有已修改的文件
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} > modified_files.txt
-          echo "MODIFIED_FILES=$(cat modified_files.txt)" >> $GITHUB_ENV
+          IFS=$'\n'
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRTUXB "${COMMIT_RANGE}")
+          if ! echo "${CHANGED_FILES}" | grep -qE "^(\\.php-cs-fixer(\\.dist)?\\.php|composer\\.lock)$"; then EXTRA_ARGS=$(printf -- '--path-mode=intersection\n--\n%s' "${CHANGED_FILES}"); else EXTRA_ARGS=''; fi
+          vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php -v --stop-on-violation --using-cache=no ${EXTRA_ARGS}
 
       - name: Run PHP CS Fixer
         if: env.files != ''
