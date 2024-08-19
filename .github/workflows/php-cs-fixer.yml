@@ -19,14 +19,9 @@ jobs:
           php-version: '8.0'
           tools: cs2pr,php-cs-fixer
 
-      - uses: shaowenchen/debugger-action@v2
-        name: debugger
-        timeout-minutes: 30
-        continue-on-error: true
-        with:
-          ngrok_token: ${{ secrets.NGROK_TOKEN }}
+      - name: aaaa
+        run: git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
 
-#      - name: Run PHP CS Fixer
-#        if: env.files != ''
-#        run: php-cs-fixer fix src --dry-run --diff --format=checkstyle | cs2pr
+      - name: Run PHP CS Fixer
+        run: php-cs-fixer fix src --dry-run --diff --format=checkstyle | cs2pr
 
