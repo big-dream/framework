@@ -1082,11 +1082,11 @@ class Request implements ArrayAccess
     /**
      * 获取环境变量
      * @access public
-     * @param  string $name 数据名称
-     * @param  string $default 默认值
+     * @param string      $name    数据名称
+     * @param string|null $default 默认值
      * @return mixed
      */
-    public function env(string $name = '', string $default = null)
+    public function env(string $name = '', ?string $default = null)
     {
         if (empty($name)) {
             return $this->env->get();
@@ -1246,11 +1246,11 @@ class Request implements ArrayAccess
     /**
      * 设置或者获取当前的Header
      * @access public
-     * @param  string $name header名称
-     * @param  string $default 默认值
+     * @param string      $name    header名称
+     * @param string|null $default 默认值
      * @return string|array|null
      */
-    public function header(string $name = '', string $default = null)
+    public function header(string $name = '', ?string $default = null)
     {
         if ('' === $name) {
             return $this->header;

@@ -432,11 +432,11 @@ class Route
     /**
      * 保存路由规则
      * @access public
-     * @param string   $rule     路由规则
-     * @param RuleItem $ruleItem RuleItem对象
+     * @param string        $rule     路由规则
+     * @param RuleItem|null $ruleItem RuleItem对象
      * @return void
      */
-    public function setRule(string $rule, RuleItem $ruleItem = null): void
+    public function setRule(string $rule, ?RuleItem $ruleItem = null): void
     {
         $this->ruleName->setRule($rule, $ruleItem);
     }
