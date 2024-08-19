@@ -19,9 +19,9 @@ jobs:
           php-version: '8.0'
           tools: cs2pr,php-cs-fixer
 
-      - name: aaaa
-        run: git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
-
       - name: Run PHP CS Fixer
-        run: php-cs-fixer fix src --dry-run --diff --format=checkstyle | cs2pr
-
+        run: |
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- '*.php')
+          for file in $changed_files; do
+            php-cs-fixer fix "$file" --dry-run --diff --rules=@PER-CS2.0 | cs2pr
+          done
