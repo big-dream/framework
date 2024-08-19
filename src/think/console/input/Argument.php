@@ -1,8 +1,9 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006~2015 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006~2024 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -14,13 +15,13 @@ namespace think\console\input;
 class Argument
 {
     // 必传参数
-    const REQUIRED = 1;
+    public const REQUIRED = 1;
 
     // 可选参数
-    const OPTIONAL = 2;
+    public const OPTIONAL = 2;
 
     // 数组参数
-    const IS_ARRAY = 4;
+    public const IS_ARRAY = 4;
 
     /**
      * 参数名

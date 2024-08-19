@@ -1,8 +1,9 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006~2023 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006~2024 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -28,9 +29,7 @@ class Config
      * 构造方法
      * @access public
      */
-    public function __construct(protected string $path = '', protected string $ext = '.php')
-    {
-    }
+    public function __construct(protected string $path = '', protected string $ext = '.php') {}
 
     public static function __make(App $app)
     {

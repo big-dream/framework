@@ -1,8 +1,9 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006~2023 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006~2024 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -188,10 +189,10 @@ class Lang
     {
         $type   = pathinfo($file, PATHINFO_EXTENSION);
         $result = match ($type) {
-            'php'       =>  include $file,
-            'yml','yaml'=>  function_exists('yaml_parse_file') ? yaml_parse_file($file) : [],
-            'json'      =>  json_decode(file_get_contents($file), true),
-            default     =>  [],
+            'php'        =>  include $file,
+            'yml','yaml' =>  function_exists('yaml_parse_file') ? yaml_parse_file($file) : [],
+            'json'       =>  json_decode(file_get_contents($file), true),
+            default      =>  [],
         };
 
         return is_array($result) ? $result : [];

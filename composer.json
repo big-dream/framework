@@ -1,7 +1,6 @@
 {
     "name": "topthink/framework",
     "description": "The ThinkPHP Framework.",
-    "version": "8.0.3",
     "keywords": [
         "framework",
         "thinkphp",

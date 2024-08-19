@@ -1,8 +1,9 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006~2023 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006~2024 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -2153,11 +2154,7 @@ class Request implements ArrayAccess
         return $this->param($name);
     }
 
-    public function offsetSet(mixed $name, mixed $value): void
-    {
-    }
+    public function offsetSet(mixed $name, mixed $value): void {}
 
-    public function offsetUnset(mixed $name): void
-    {
-    }
+    public function offsetUnset(mixed $name): void {}
 }

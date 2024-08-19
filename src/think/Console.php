@@ -1,12 +1,13 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | TopThink [ WE CAN DO IT JUST THINK IT ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2015 http://www.topthink.com All rights reserved.
+// | Copyright (c) 2024 http://www.topthink.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: zhangyajun <448901948@qq.com>
 // +----------------------------------------------------------------------
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace think;
 
@@ -105,7 +106,7 @@ class Console
     /**
      * 初始化
      */
-    protected function initialize():void
+    protected function initialize(): void
     {
         if (!$this->app->initialized()) {
             $this->app->initialize();
@@ -116,7 +117,7 @@ class Console
     /**
      * 构造request
      */
-    protected function makeRequest():void
+    protected function makeRequest(): void
     {
         $url = $this->app->config->get('app.url', 'http://localhost');
 
