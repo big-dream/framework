@@ -41,6 +41,7 @@ $a='a23'.'a'.'dd';function dasdasd() {echo 'ds';}
 $b='dsds';
 $c = 1 + 2+3;
 $c = 1 + 2+3;
+$c = 1 + 2+3;
 if (!function_exists('abort')) {
     /**
      * 抛出HTTP异常
