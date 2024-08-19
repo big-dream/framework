@@ -88,6 +88,18 @@ abstract class Rule
     protected $pattern = [];
 
     /**
+     * 预定义变量规则
+     * @var array
+     */
+    protected $regex = [
+        'int'       => '\d+',
+        'float'     => '\d+\.\d+',
+        'alpha'     => '[A-Za-z]+',
+        'alphaNum'  => '[A-Za-z0-9]+',
+        'alphaDash' => '[A-Za-z0-9\-\_]+',
+    ];
+
+    /**
      * 需要和分组合并的路由参数
      * @var array
      */
@@ -118,6 +130,19 @@ abstract class Rule
     public function setOption(string $name, $value)
     {
         $this->option[$name] = $value;
+
+        return $this;
+    }
+
+    /**
+     * 注册变量规则
+     * @access public
+     * @param  array $regex 变量规则
+     * @return $this
+     */
+    public function regex(array $regex)
+    {
+        $this->regex = array_merge($this->regex, $regex);
 
         return $this;
     }
@@ -632,6 +657,16 @@ abstract class Rule
             $this->parseUrlParams(implode('|', $url), $matches);
         }
 
+        foreach ($matches as $key => &$val) {
+            if (isset($this->pattern[$key]) && in_array($this->pattern[$key], ['\d+', 'int', 'float'])) {
+                $val = match ($this->pattern[$key]) {
+                    'int', '\d+' => (int) $val,
+                    'float'      => (float) $val,
+                    default      => $val,
+                };
+            }
+        }
+
         $this->vars = $matches;
 
         // 发起路由调度
@@ -648,11 +683,17 @@ abstract class Rule
      */
     protected function dispatch(Request $request, $route, array $option): Dispatch
     {
-        if (is_subclass_of($route, Dispatch::class)) {
+        if (isset($option['dispatcher']) && is_subclass_of($option['dispatcher'], Dispatch::class)) {
+            // 指定分组的调度处理对象
+            $result = new $option['dispatcher']($request, $this, $route, $this->vars);
+        } elseif (is_subclass_of($route, Dispatch::class)) {
             $result = new $route($request, $this, $route, $this->vars);
         } elseif ($route instanceof Closure) {
             // 执行闭包
             $result = new CallbackDispatch($request, $this, $route, $this->vars);
+        } elseif (is_array($route)) {
+            // 路由到类的方法
+            $result = $this->dispatchMethod($request, $route);
         } elseif (str_contains($route, '@') || str_contains($route, '::') || str_contains($route, '\\')) {
             // 路由到类的方法
             $route  = str_replace('::', '@', $route);
@@ -666,24 +707,28 @@ abstract class Rule
     }
 
     /**
-     * 解析URL地址为 模块/控制器/操作
+     * 调度到类的方法
      * @access protected
      * @param  Request $request Request对象
-     * @param  string  $route 路由地址
+     * @param  string|array  $route 路由地址
      * @return CallbackDispatch
      */
-    protected function dispatchMethod(Request $request, string $route): CallbackDispatch
+    protected function dispatchMethod(Request $request, string | array $route): CallbackDispatch
     {
-        $path = $this->parseUrlPath($route);
+        if (is_string($route)) {
+            $path = $this->parseUrlPath($route);
 
-        $route  = str_replace('/', '@', implode('/', $path));
-        $method = str_contains($route, '@') ? explode('@', $route) : $route;
+            $route  = str_replace('/', '@', implode('/', $path));
+            $method = str_contains($route, '@') ? explode('@', $route) : $route;
+        } else {
+            $method = $route;
+        }
 
         return new CallbackDispatch($request, $this, $method, $this->vars);
     }
 
     /**
-     * 解析URL地址为 模块/控制器/操作
+     * 调度到控制器方法 规则：模块/控制器/操作
      * @access protected
      * @param  Request $request Request对象
      * @param  string  $route 路由地址
@@ -876,6 +921,10 @@ abstract class Rule
 
         if (isset($pattern[$name])) {
             $nameRule = $pattern[$name];
+            if (isset($this->regex[$nameRule])) {
+                $nameRule = $this->regex[$nameRule];
+            }
+
             if (str_starts_with($nameRule, '/') && str_ends_with($nameRule, '/')) {
                 $nameRule = substr($nameRule, 1, -1);
             }
