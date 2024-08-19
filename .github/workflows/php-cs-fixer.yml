@@ -39,6 +39,6 @@ jobs:
           if ! echo "${CHANGED_FILES}" | grep -qE "^(\\.php-cs-fixer(\\.dist)?\\.php|composer\\.lock)$"; then EXTRA_ARGS=$(printf -- '--path-mode=intersection\n--\n%s' "${CHANGED_FILES}"); else EXTRA_ARGS=''; fi
           php-cs-fixer check --rules=@PER-CS2.0 -v --stop-on-violation --using-cache=no ${EXTRA_ARGS}
 
-      - name: Run PHP CS Fixer
-        if: env.files != ''
-        run: php-cs-fixer fix $files --dry-run --diff --rules=@PER-CS2.0 --format=checkstyle | cs2pr
+#      - name: Run PHP CS Fixer
+#        if: env.files != ''
+#        run: php-cs-fixer fix $files --dry-run --diff --rules=@PER-CS2.0 --format=checkstyle | cs2pr
