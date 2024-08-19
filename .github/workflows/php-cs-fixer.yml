@@ -34,6 +34,7 @@ jobs:
       - name: Get list of modified files
         id: modified_files
         run: |
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
           # 获取所有已修改的文件
           git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} > modified_files.txt
           echo "MODIFIED_FILES=$(cat modified_files.txt)" >> $GITHUB_ENV
