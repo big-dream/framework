@@ -5,6 +5,8 @@ on:
     branches:
       - "8.0"
       - "8.0-CONTRIBUTING"
+    paths:
+      - '**.php'
   pull_request:
 
 jobs:
@@ -29,18 +31,12 @@ jobs:
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: Get list of changed PHP files
-        id: changed_files
+      - name: Get list of modified files
+        id: modified_files
         run: |
-          BASE_REF="${{ github.event.pull_request.base.ref }}"
-          HEAD_REF="${{ github.event.pull_request.head.ref }}"
-          
-          git diff --name-only --diff-filter=d $BASE_REF $HEAD_REF | grep '\.php$' > changed_files.txt
-          if [ -s changed_files.txt ]; then
-            echo "files=$(cat changed_files.txt | paste -sd " ")" >> $GITHUB_ENV
-          else
-            echo "files=" >> $GITHUB_ENV
-          fi
+          # 获取所有已修改的文件
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} > modified_files.txt
+          echo "MODIFIED_FILES=$(cat modified_files.txt)" >> $GITHUB_ENV
 
       - name: Run PHP CS Fixer
         if: env.files != ''
